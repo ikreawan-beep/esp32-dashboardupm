@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Create Account | Load Cell System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#f57c00;
+  --light:#f8fafc;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  display:flex;
+  min-height:100vh;
+}
+
+.left{
+  flex:1;
+  background:linear-gradient(135deg,#f57c00,#ffb74d);
+  color:#fff;
+  padding:60px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.left h1{font-size:34px;margin-bottom:20px}
+.left p{opacity:.9;line-height:1.6}
+
+.right{
+  flex:1;
+  background:var(--light);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.form-box{
+  width:380px;
+  background:#fff;
+  padding:40px;
+  border-radius:24px;
+  box-shadow:0 25px 50px rgba(0,0,0,.15);
+}
+
+.form-box h2{margin-bottom:20px}
+
+.form-box input{
+  width:100%;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid #ddd;
+  margin-bottom:14px;
+}
+
+.form-box button{
+  width:100%;
+  padding:14px;
+  border-radius:16px;
+  border:none;
+  background:var(--primary);
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.error{
+  font-size:13px;
+  color:#f44336;
+  margin-bottom:10px;
+}
+
+.footer{
+  margin-top:16px;
+  font-size:14px;
+  text-align:center;
+}
+.footer a{
+  color:var(--primary);
+  text-decoration:none;
+  font-weight:600;
+}
+</style>
+</head>
+
+<body>
+
+<div class="left">
+  <h1>Load Cell Monitoring System</h1>
+  <p>
+    Professional monitoring platform for precision
+    weight and power measurement.
+  </p>
+</div>
+
+<div class="right">
+  <div class="form-box">
+    <h2>Create Account</h2>
+
+    <div id="errorMsg" class="error"></div>
+
+    <input id="firstname" type="text" placeholder="First Name">
+    <input id="lastname" type="text" placeholder="Last Name">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <input id="confirmPassword" type="password" placeholder="Confirm Password">
+
+    <button onclick="register()">Create Account</button>
+
+    <div class="footer">
+      Already have an account?
+      <a href="login.html">Login</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyCBcncIM475zAeF4hmvnkE_Dpsii53mcCU",
+  authDomain: "ultrasound-watt-meter.firebaseapp.com",
+  databaseURL: "https://ultrasound-watt-meter-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ultrasound-watt-meter",
+  storageBucket: "ultrasound-watt-meter.firebasestorage.app",
+  messagingSenderId: "508236173257",
+  appId: "1:508236173257:web:db39c8714d05c9380ea218"
+});
+
+const auth = firebase.auth();
+const db = firebase.database();
+
+function register(){
+  const first = firstname.value.trim();
+  const last = lastname.value.trim();
+  const emailVal = email.value.trim();
+  const pass = password.value;
+  const confirm = confirmPassword.value;
+
+  if(!first || !last || !emailVal || !pass){
+    errorMsg.innerText="Please fill in all fields.";
+    return;
+  }
+
+  if(pass !== confirm){
+    errorMsg.innerText="Passwords do not match.";
+    return;
+  }
+
+  auth.createUserWithEmailAndPassword(emailVal, pass)
+    .then((cred)=>{
+      return db.ref("users/"+cred.user.uid).set({
+        firstName:first,
+        lastName:last,
+        fullName:first+" "+last,
+        email:emailVal,
+        role:"user",
+        createdAt:new Date().toISOString()
+      });
+    })
+    .then(()=>{
+      alert("Account created successfully.");
+      window.location.href="index.html";
+    })
+    .catch(err=>{
+      errorMsg.innerText=err.message;
+    });
+}
+</script>
+
+</body>
+</html>
