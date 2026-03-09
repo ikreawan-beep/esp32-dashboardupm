@@ -168,23 +168,27 @@ body{
 }
 
 .card{
-  background:var(--card);
+  background:white;
+  border-radius:15px;
   padding:25px;
-  border-radius:18px;
-  box-shadow:0 15px 30px rgba(0,0,0,.05);
+  box-shadow:0 4px 15px rgba(0,0,0,0.08);
+  text-align:center;
 }
 
 .card h4{
-  margin:0;
-  font-size:14px;
-  color:var(--muted);
   margin-bottom:10px;
+  color:#666;
+  font-weight:500;
 }
 
 .value{
-  font-size:36px;
+  display:flex;
+  justify-content:center;
+  align-items:baseline;
+  gap:8px;
+  font-size:48px;
   font-weight:700;
-  color:var(--primary);
+  color:#1a73e8;
 }
 
 .chart-card{
@@ -200,7 +204,7 @@ body{
 
 .double-grid{
   display:grid;
-  grid-template-columns:repeat(2,1fr);
+  grid-template-columns:1fr 1fr;
   gap:20px;
 }
 
@@ -211,7 +215,7 @@ body{
 <!-- LOGIN PAGE -->
 <div id="loginPage">
   <div class="login-wrapper">
-    <div class="logo">Load Cell Monitoring</div>
+    <div class="logo">Ultrasound Power Meter</div>
     <div class="subtitle">Secure access to your monitoring dashboard</div>
 
     <div class="input-group">
@@ -224,10 +228,6 @@ body{
 
     <button class="btn" onclick="login()">Sign In</button>
 
-    <div class="register">
-      Don't have an account?
-      <a href="register.html">Create Account</a>
-    </div>
 
     <div id="errorMsg"></div>
   </div>
@@ -237,7 +237,7 @@ body{
 <div id="dashboardPage">
 
   <div class="topbar">
-    <div class="brand">Load Cell Monitoring System</div>
+    <div class="brand">Ultrasound Power Meter</div>
     <button class="logout" onclick="logout()">Logout</button>
   </div>
 
@@ -269,13 +269,19 @@ body{
   <!-- WEIGHT + POWER -->
   <div class="double-grid" style="margin-top:20px;">
     <div class="card">
-      <h4>Weight (g)</h4>
-      <div class="value" id="weight">--</div>
+      <h4>Weight</h4>
+      <div class="value">
+        <span id="weight">--</span>
+        <span class="unit">g</span>
+      </div>
     </div>
 
     <div class="card">
-      <h4>Power (W)</h4>
-      <div class="value" id="power">--</div>
+      <h4>Power</h4>
+      <div class="value">
+        <span id="power">--</span>
+        <span class="unit">W</span>
+      </div>
     </div>
   </div>
   <div class="card" style="margin-top:20px;">
@@ -299,49 +305,84 @@ body{
   <div id="calStatus" style="margin-top:10px;font-weight:600;"></div>
   </div>
 
-  <!-- CHART + HISTORY -->
-  <div class="double-grid" style="margin-top:20px;">
+  <div class="card" style="margin-top:20px;">
+  <h4>Device Control</h4>
 
-    <div class="card">
-      <h4>Real-Time Weight Trend</h4>
+  <button onclick="sendTare()" 
+    style="padding:12px 18px;border:none;border-radius:10px;background:#e53935;color:white;margin-right:10px;cursor:pointer;">
+    TARE
+  </button>
+
+  <button onclick="setUnit('gram')" 
+    style="padding:12px 18px;border:none;border-radius:10px;background:#1976d2;color:white;margin-right:10px;cursor:pointer;">
+    Gram
+  </button>
+
+  <button onclick="setUnit('power')" 
+    style="padding:12px 18px;border:none;border-radius:10px;background:#2e7d32;color:white;cursor:pointer;">
+    Power
+  </button>
+
+  <div id="controlStatus" style="margin-top:10px;font-weight:600;"></div>
+</div>
+
+  <!-- CHART + HISTORY -->
+<div class="double-grid" style="margin-top:25px;">
+
+  <!-- CHART -->
+  <div class="card">
+    <h4>Real-Time Weight Trend</h4>
+
+    <div style="height:260px;">
       <canvas id="chart"></canvas>
     </div>
 
-    <div class="card">
-  <h4>History</h4>
-
-  <div style="margin-bottom:10px;">
-    <label>Serial</label>
-    <input id="searchSerial" type="text"
-      style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;">
   </div>
 
-  <div style="display:flex;gap:10px;margin-bottom:10px;">
-    <div style="flex:1;">
-      <label>From</label>
-      <input id="fromDate" type="date"
-        style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;">
+  <!-- HISTORY -->
+  <div class="card">
+
+    <h4>History</h4>
+
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;color:#777;">Device Serial</label>
+      <input id="searchSerial" type="text"
+      placeholder="Enter serial..."
+      style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
     </div>
-    <div style="flex:1;">
-      <label>To</label>
-      <input id="toDate" type="date"
-        style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;">
+
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+
+      <div style="flex:1;">
+        <label style="font-size:13px;color:#777;">From</label>
+        <input id="fromDate" type="date"
+        style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+      </div>
+
+      <div style="flex:1;">
+        <label style="font-size:13px;color:#777;">To</label>
+        <input id="toDate" type="date"
+        style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+      </div>
+
     </div>
+
+    <button onclick="searchHistory()"
+      style="width:100%;padding:10px;border:none;background:#1976d2;color:white;border-radius:8px;font-weight:600;cursor:pointer;">
+      Search History
+    </button>
+
+    <div id="historyList"
+      style="margin-top:15px;
+      max-height:240px;
+      overflow:auto;
+      border-top:1px solid #eee;
+      padding-top:10px;">
+    </div>
+
   </div>
 
-  <button onclick="searchHistory()"
-    style="padding:8px 12px;border:none;background:#1976d2;color:white;border-radius:6px;">
-    Search
-  </button>
-
-  <div id="historyList" style="margin-top:15px;max-height:350px;overflow:auto;"></div>
 </div>
-
-
-  </div>
-
-</div>
-
 
 
 
@@ -384,7 +425,11 @@ auth.onAuthStateChanged(user=>{
 });
 
 function startApp(){
+  if(auth.currentUser.displayName){
+  userName.innerText = auth.currentUser.displayName;
+}else{
   userName.innerText = auth.currentUser.email;
+}
   const chartObj = new Chart(chart,{
   type:"line",
   data:{
@@ -620,7 +665,20 @@ function searchHistory(){
   });
 
 }
- 
+function sendTare(){
+
+  db.ref("control/tare").set(1);
+
+  controlStatus.innerText = "TARE command sent";
+
+}
+function setUnit(unit){
+
+  db.ref("control/unit").set(unit);
+
+  controlStatus.innerText = "Unit changed to " + unit;
+
+}
 </script>
 
 
