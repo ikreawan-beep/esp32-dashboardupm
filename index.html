@@ -191,6 +191,16 @@ body{
   color:#1a73e8;
 }
 
+.valueinput{
+  display:flex;
+  justify-content:center;
+  align-items:baseline;
+  gap:8px;
+  font-size:48px;
+  font-weight:700;
+  color:#1a73e8;
+}
+
 .chart-card{
   margin-top:5px;
 }
@@ -206,6 +216,175 @@ body{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:20px;
+}
+.topbar{
+  height:65px;
+  background:white;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 30px;
+  box-shadow:0 4px 15px rgba(0,0,0,.08);
+}
+
+.topbar-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.compareBtn{
+  background:#6a1b9a;
+  color:white;
+  border:none;
+  padding:8px 16px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.duty-input{
+  border:none;
+  outline:none;
+  background:transparent;
+  font-size:48px;
+  font-weight:700;
+  color:#2a6fd6;
+  width:120px;
+}
+.compareBtn:hover{
+  background:#4a148c;
+}
+
+.dark-mode{
+  --bg:#0f1115;
+  --card:#1c1f26;
+  --text:#ff9800;
+  --value:#42a5f5;
+}
+
+.dark-mode body{
+  background:#0f1115;
+  color:#ff9800;
+}
+
+.dark-mode .topbar{
+  background:#1e1e1e;
+}
+
+.dark-mode .card{
+  background:#1c1f26;
+  box-shadow:0 4px 15px rgba(0,0,0,.6);
+}
+
+.dark-mode .card h4{
+  color:#ff9800;
+}
+
+.dark-mode .value{
+  color:#42a5f5;
+}
+
+.dark-mode .valueinput{
+  color:#42a5f5;
+}
+
+
+
+.dark-mode input,
+.dark-mode select{
+  background:#2a2f3a;
+  border:1px solid #444;
+  color:#fff;
+}
+
+.dark-mode .freq-input,
+.dark-mode .duty-input{
+  background:#2a2f3a;
+  border:none;
+  outline:none;
+  color:#ffffff;
+}
+.dark-mode .topbar{
+  background:#14171d;
+}
+/* ================= parameter input================= */
+.freq-input{
+  width:120px;
+  font-size:64px;
+  font-weight:700;
+  text-align:right;
+
+  background:transparent;
+  border:none;
+  border-bottom:2px solid #1c1f26;
+
+  color:#2a6fd6;
+  outline:none;
+}
+
+/* ลบ spinner ของ number */
+.freq-input::-webkit-outer-spin-button,
+.freq-input::-webkit-inner-spin-button{
+  -webkit-appearance:none;
+  margin:0;
+}
+
+.freq-input[type=number]{
+  -moz-appearance:textfield;
+}
+/* ================= parameter input dark mode================= */
+.dark-mode .freq-input{
+  background:#2a2f3a;
+  border:none;
+  border-radius:6px;
+
+  color:#42a5f5;
+  font-size:64px;
+  font-weight:700;
+  text-align:center;
+
+  padding:6px 12px;
+
+  box-shadow:inset 0 0 6px rgba(0,0,0,0.6);
+}
+
+/* ลบ spinner */
+.dark-mode .freq-input::-webkit-inner-spin-button,
+.dark-mode .freq-input::-webkit-outer-spin-button{
+  -webkit-appearance:none;
+}
+.dark-mode input{
+  background:#2a2f3a;
+  border:1px solid #2a2f3a;
+  color:#42a5f5;
+}
+
+.dark-mode .freq-input,
+.dark-mode .duty-input{
+
+  background:#2a2f3a;
+  border:none;
+  border-radius:6px;
+
+  color:#42a5f5;
+
+  box-shadow:
+    inset 0 0 6px rgba(0,0,0,0.7);
+}
+/* Chrome, Edge, Safari */
+.duty-input::-webkit-outer-spin-button,
+.duty-input::-webkit-inner-spin-button{
+  -webkit-appearance:none;
+  margin:0;
+}
+
+/* Firefox */
+.duty-input{
+  -moz-appearance:textfield;
+}
+.duty-input{
+  text-align:center;
+  width:90px;
 }
 
 </style>
@@ -237,9 +416,20 @@ body{
 <div id="dashboardPage">
 
   <div class="topbar">
-    <div class="brand">Ultrasound Power Meter</div>
-    <button class="logout" onclick="logout()">Logout</button>
+  <div class="brand">Ultrasound Power Meter</div>
+  <div class="topbar-right">
+    <button class="compareBtn" onclick="toggleDarkMode()">
+      🌙
+    </button>
+    <button class="compareBtn" onclick="openCompare()">
+      Compare
+    </button>
+    <button class="logout" onclick="logout()">
+      Logout
+    </button>
   </div>
+</div>
+  
 
   <div class="container">
 
@@ -249,29 +439,45 @@ body{
     <div class="value" style="font-size:20px;" id="userName">--</div>
   </div>
 
+  <div class="card" style="margin-top:20px;">
+  <h4>Measurement Mode</h4>
+
+  <select id="modeSelect" onchange="changeMode()"
+  style="width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:14px;">
+
+    <option value="continuous">Continuous Mode</option>
+    <option value="pulse">Pulse Mode</option>
+
+  </select>
+
+  <div id="modeStatus" style="margin-top:10px;font-weight:600;"></div>
+</div>
+
   <!-- SERIAL + ERA -->
   <div class="double-grid" style="margin-top:20px;">
     
     <div class="card">
-      <h4>Device Serial</h4>
+      <h4>Device Serial Number</h4>
       <input id="serialInput" type="text" 
         style="width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;">
     </div>
 
     <div class="card">
-      <h4>ERA (cm²)</h4>
+      <h4>Effective Radiating Area (cm²)</h4>
       <input id="eraInput" type="number" value="5" step="0.1"
         style="width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;">
     </div>
 
   </div>
+<!-- ================= CONTINUOUS MODE ================= -->
+<div id="continuousUI">
 
-  <!-- WEIGHT + POWER -->
   <div class="double-grid" style="margin-top:20px;">
+
     <div class="card">
       <h4>Weight</h4>
       <div class="value">
-        <span id="weight">--</span>
+        <span id="weightC">--</span>
         <span class="unit">g</span>
       </div>
     </div>
@@ -279,55 +485,121 @@ body{
     <div class="card">
       <h4>Power</h4>
       <div class="value">
-        <span id="power">--</span>
+        <span id="powerC">--</span>
         <span class="unit">W</span>
       </div>
     </div>
-  </div>
-  <div class="card" style="margin-top:20px;">
-  <h4>Daily Calibration</h4>
+
     <div class="card">
-  <h4>Intensity (W/cm²)</h4>
-  <div class="value" id="intensity">--</div>
+    <h4>Frequency</h4>
+      <div class="value">
+        <input id="freqInput" class="freq-input" type="number" value="1.0" step="0.1">
+        <span>MHz</span>
+      </div>
+    </div>
+
+    <div class="card">
+    <h4>Device Control</h4>
+      <button onclick="saveCalibration()"
+        style="padding:12px 18px;border:none;border-radius:10px;background:#e53935;color:white;margin-right:10px;cursor:pointer;">
+        Save Calibration
+      </button>
+        <button onclick="sendTare()" 
+        style="padding:12px 18px;border:none;border-radius:10px;background:#e53935;color:white;margin-right:10px;cursor:pointer;">
+        TARE
+      </button>
+      <button onclick="setUnit('gram')" 
+        style="padding:12px 18px;border:none;border-radius:10px;background:#1976d2;color:white;margin-right:10px;cursor:pointer;">
+        Gram
+      </button>
+
+      <button onclick="setUnit('power')" 
+        style="padding:12px 18px;border:none;border-radius:10px;background:#2e7d32;color:white;cursor:pointer;">
+        Power
+      </button>
   </div>
 
-  <div style="margin-bottom:10px;">
-    <label>Reference Intensity (W/cm²)</label>
-    <input id="referenceInput" type="number" step="0.001" value="0.130"
-      style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;">
+</div>
+  <div class="card" style="margin-top:20px;">
+    <h4>Intensity (W/cm²)</h4>
+    <div class="value" id="intensityC">--</div>
   </div>
-
-  <button onclick="saveCalibration()"
-    style="padding:12px 18px;border:none;border-radius:10px;background:#2e7d32;color:white;cursor:pointer;">
-    Save Calibration
-  </button>
 
   <div id="calStatus" style="margin-top:10px;font-weight:600;"></div>
+
+</div>
+
+
+<!-- ================= PULSE MODE ================= -->
+<div id="pulseUI" style="display:none;">
+   
+  <div class="double-grid" style="margin-top:20px;">
+
+    <div class="card">
+      <h4>Weight</h4>
+      <div class="value">
+        <span id="weightP">--</span>
+        <span class="unit">g</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Power</h4>
+      <div class="value">
+        <span id="powerP">--</span>
+        <span class="unit">W</span>
+      </div>
+    </div>
+
+    <div class="card">
+    <h4>Frequency</h4>
+      <div class="value">
+        <input id="freqInput" class="freq-input" type="number" value="1.0" step="0.1">
+        <span>MHz</span>
+      </div>
+
+    </div>
+
+        <div class="card">
+      <h4>Duty Cycle</h4>
+      <div class="value">
+        <input id="dutyInput" class="duty-input" type="number" value="1.0" step="0.1"> 
+        <span>%</span>
+      </div>
+    </div>
+
+
+    <div class="card" >
+      <h4>Intensity (W/cm²)</h4>
+      <div class="value" id="intensityP">--</div>
+    </div>
+    <div class="card">
+    <h4>Device Control</h4>
+      <button onclick="saveCalibration()"
+        style="padding:12px 18px;border:none;border-radius:10px;background:#e53935;color:white;margin-right:10px;cursor:pointer;">
+        Save Calibration
+      </button>
+        <button onclick="sendTare()" 
+        style="padding:12px 18px;border:none;border-radius:10px;background:#e53935;color:white;margin-right:10px;cursor:pointer;">
+        TARE
+      </button>
+      <button onclick="setUnit('gram')" 
+        style="padding:12px 18px;border:none;border-radius:10px;background:#1976d2;color:white;margin-right:10px;cursor:pointer;">
+        Gram
+      </button>
+
+      <button onclick="setUnit('power')" 
+        style="padding:12px 18px;border:none;border-radius:10px;background:#2e7d32;color:white;cursor:pointer;">
+        Power
+      </button>
   </div>
 
-  <div class="card" style="margin-top:20px;">
-  <h4>Device Control</h4>
+</div>
 
-  <button onclick="sendTare()" 
-    style="padding:12px 18px;border:none;border-radius:10px;background:#e53935;color:white;margin-right:10px;cursor:pointer;">
-    TARE
-  </button>
-
-  <button onclick="setUnit('gram')" 
-    style="padding:12px 18px;border:none;border-radius:10px;background:#1976d2;color:white;margin-right:10px;cursor:pointer;">
-    Gram
-  </button>
-
-  <button onclick="setUnit('power')" 
-    style="padding:12px 18px;border:none;border-radius:10px;background:#2e7d32;color:white;cursor:pointer;">
-    Power
-  </button>
-
-  <div id="controlStatus" style="margin-top:10px;font-weight:600;"></div>
 </div>
 
   <!-- CHART + HISTORY -->
-<div class="double-grid" style="margin-top:25px;">
+  <div class="double-grid" style="margin-top:25px;">
 
   <!-- CHART -->
   <div class="card">
@@ -381,6 +653,7 @@ body{
     </div>
 
   </div>
+  
 
 </div>
 
@@ -425,7 +698,11 @@ auth.onAuthStateChanged(user=>{
 });
 
 function startApp(){
-  if(auth.currentUser.displayName){
+    // Load saved theme
+  if(localStorage.getItem("theme") === "dark"){
+    document.body.classList.add("dark-mode");
+  }
+if(auth.currentUser.displayName){
   userName.innerText = auth.currentUser.displayName;
 }else{
   userName.innerText = auth.currentUser.email;
@@ -464,7 +741,8 @@ function startApp(){
 
   db.ref("loadcell/weight").on("value",snap=>{
     const w = snap.val() || 0;
-    weight.innerText = w.toFixed(2);
+    weightC.innerText = w.toFixed(3);
+    weightP.innerText = w.toFixed(3);
 
     const time = new Date().toLocaleTimeString();
 
@@ -481,7 +759,8 @@ function startApp(){
 
   db.ref("loadcell/power").on("value",snap=>{
     const p = snap.val() || 0;
-    power.innerText = p.toFixed(2);
+    powerC.innerText = p.toFixed(1);
+    powerP.innerText = p.toFixed(1);
     updateIntensity();
   });
   function loadHistory(serial){
@@ -540,19 +819,15 @@ function saveCalibration(){
     return;
   }
 
-  const weightVal = parseFloat(weight.innerText) || 0;
-  const powerVal = parseFloat(power.innerText) || 0;
+  const weightVal = parseFloat(weightC.innerText) || 0;
+  const powerVal = parseFloat(powerC.innerText) || 0;
   const eraVal = parseFloat(eraInput.value) || 1;
-  const referenceVal = parseFloat(referenceInput.value) || 0;
+  const freqVal = parseFloat(freqInput.value) || 1;
+  const dutyVal = parseFloat(dutyInput.value) || 1;
+  const mode = modeSelect.value;
 
   const intensity = powerVal / eraVal;
 
-  // tolerance 5%
-  const tolerance = 0.05;
-  const min = referenceVal * (1 - tolerance);
-  const max = referenceVal * (1 + tolerance);
-
-  const status = (intensity >= min && intensity <= max) ? "PASS" : "FAIL";
 
   const now = new Date();
   const timestamp =
@@ -563,15 +838,22 @@ function saveCalibration(){
     String(now.getMinutes()).padStart(2,'0') + "-" +
     String(now.getSeconds()).padStart(2,'0');
 
+  // Base data
   const logData = {
     user: auth.currentUser.email,
+    mode: mode,
     weight: weightVal,
     power: powerVal,
     era: eraVal,
+    Frequency: freqVal,
+    Duty: dutyVal,
     intensity: parseFloat(intensity.toFixed(3)),
-    reference: referenceVal,
-    status: status
   };
+
+  // เพิ่มค่าเฉพาะ Pulse Mode
+  if(mode === "pulse"){
+    logData.duty = parseFloat(dutyInput.innerText) || 0;
+  }
 
   db.ref("calibration_logs/"+serial+"/"+timestamp).set(logData);
 
@@ -579,14 +861,36 @@ function saveCalibration(){
   calStatus.style.color = status === "PASS" ? "green" : "red";
 
 }
+function changeMode(){
+
+  const mode = modeSelect.value;
+
+  db.ref("control/mode").set(mode);
+
+  if(mode === "continuous"){
+
+    continuousUI.style.display = "block";
+    pulseUI.style.display = "none";
+
+  }else{
+
+    continuousUI.style.display = "none";
+    pulseUI.style.display = "block";
+
+  }
+
+  modeStatus.innerText = "Current Mode : " + mode;
+
+}
 function updateIntensity(){
 
-  const powerVal = parseFloat(power.innerText) || 0;
+  const powerVal = parseFloat(powerC.innerText) || 0;
   const eraVal = parseFloat(eraInput.value) || 1;
 
   const result = powerVal / eraVal;
 
-  intensity.innerText = result.toFixed(3);
+  intensityC.innerText = result.toFixed(3);
+  intensityP.innerText = result.toFixed(3);
 }
 function searchHistory(){
 
@@ -647,15 +951,23 @@ function searchHistory(){
         div.style.background="#ffe6e6";
       }
 
+      let pulseData = "";
+      if(data.mode === "pulse"){
+        pulseData = `
+          Duty Cycle: ${data.duty || "-"} %<br>
+          `;
+        }
+
       div.innerHTML = `
         <strong>${key}</strong><br>
         User: ${data.user}<br>
+        Mode: ${data.mode}<br>
         Weight: ${data.weight} g<br>
         Power: ${data.power} W<br>
-        ERA: ${data.era} cm²<br>
+        Frequency: ${data.Frequency} Hz<br>
+        ${pulseData}
         Intensity: ${data.intensity} W/cm²<br>
-        Reference: ${data.reference} W/cm²<br>
-        Status: <b>${data.status}</b>
+        ERA: ${data.era} cm²<br>
       `;
 
       historyList.prepend(div);
@@ -677,6 +989,23 @@ function setUnit(unit){
   db.ref("control/unit").set(unit);
 
   controlStatus.innerText = "Unit changed to " + unit;
+
+}
+function openCompare(){
+
+  window.open("Compare.html","_blank");
+
+}
+
+function toggleDarkMode(){
+
+  document.body.classList.toggle("dark-mode");
+
+  if(document.body.classList.contains("dark-mode")){
+    localStorage.setItem("theme","dark");
+  }else{
+    localStorage.setItem("theme","light");
+  }
 
 }
 </script>

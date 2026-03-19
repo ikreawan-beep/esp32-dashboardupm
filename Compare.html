@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Calibration Compare</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6f9;
+padding:40px;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:10px;
+box-shadow:0 4px 15px rgba(0,0,0,.1);
+margin-bottom:20px;
+}
+
+select{
+width:100%;
+padding:10px;
+margin-top:5px;
+margin-bottom:15px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+background:#1976d2;
+color:white;
+border:none;
+padding:12px;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+width:100%;
+margin-bottom:10px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #ddd;
+text-align:center;
+}
+
+th{
+background:#1976d2;
+color:white;
+}
+
+.diff{
+font-weight:bold;
+color:#e53935;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Calibration Compare</h2>
+
+<label>Device Serial</label>
+<select id="serial"></select>
+
+<button onclick="loadTimes()">Load Available Times</button>
+
+<label>Time 1</label>
+<select id="time1"></select>
+
+<label>Time 2</label>
+<select id="time2"></select>
+
+<button onclick="compare()">Compare</button>
+
+<button onclick="exportExcel()">Export Excel</button>
+
+</div>
+
+<div class="card">
+
+<table>
+
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Time 1</th>
+<th>Time 2</th>
+<th>Difference</th>
+</tr>
+</thead>
+
+<tbody id="result"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+const firebaseConfig = {
+apiKey: "AIzaSyCBcncIM475zAeF4hmvnkE_Dpsii53mcCU",
+authDomain: "ultrasound-watt-meter.firebaseapp.com",
+databaseURL: "https://ultrasound-watt-meter-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId: "ultrasound-watt-meter",
+storageBucket: "ultrasound-watt-meter.firebasestorage.app",
+messagingSenderId: "508236173257",
+appId: "1:508236173257:web:db39c8714d05c9380ea218"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+
+// โหลด Serial
+function loadSerials(){
+
+db.ref("calibration_logs").once("value")
+.then(snap=>{
+
+console.log("Firebase Data:",snap.val());
+
+serial.innerHTML="";
+
+if(!snap.exists()){
+alert("No calibration data found");
+return;
+}
+
+snap.forEach(child=>{
+
+const opt=document.createElement("option");
+opt.value=child.key;
+opt.text=child.key;
+
+serial.appendChild(opt);
+
+});
+
+})
+.catch(err=>{
+console.error("Firebase error:",err);
+});
+
+}
+
+
+// โหลดเวลา
+function loadTimes(){
+
+const serialVal=serial.value;
+
+db.ref("calibration_logs/"+serialVal).once("value")
+.then(snap=>{
+
+time1.innerHTML="";
+time2.innerHTML="";
+
+snap.forEach(child=>{
+
+const t=child.key;
+
+const opt1=new Option(t,t);
+const opt2=new Option(t,t);
+
+time1.appendChild(opt1);
+time2.appendChild(opt2);
+
+});
+
+});
+
+}
+
+
+// เปรียบเทียบ
+function compare(){
+
+const serialVal=serial.value;
+const t1=time1.value;
+const t2=time2.value;
+
+if(!t1||!t2){
+alert("Please select both times");
+return;
+}
+
+Promise.all([
+
+db.ref("calibration_logs/"+serialVal+"/"+t1).once("value"),
+db.ref("calibration_logs/"+serialVal+"/"+t2).once("value")
+
+]).then(([snap1,snap2])=>{
+
+const a=snap1.val();
+const b=snap2.val();
+
+showCompare(a,b);
+
+});
+
+}
+
+
+// แสดงผล
+function showCompare(a,b){
+
+const params=["weight","power","intensity","era"];
+
+let html="";
+
+params.forEach(p=>{
+
+const v1=parseFloat(a[p]||0);
+const v2=parseFloat(b[p]||0);
+
+const diff=(v2-v1).toFixed(3);
+
+html+=`
+
+<tr>
+<td>${p}</td>
+<td>${v1}</td>
+<td>${v2}</td>
+<td class="diff">${diff}</td>
+</tr>
+
+`;
+
+});
+
+result.innerHTML=html;
+
+}
+
+
+// Export Excel
+function exportExcel(){
+
+const serialVal = serial.value;
+
+db.ref("calibration_logs/"+serialVal)
+.once("value")
+.then(snap=>{
+
+let data=[];
+
+snap.forEach(child=>{
+
+const d=child.val();
+
+data.push({
+Timestamp:child.key,
+User:d.user,
+Mode:d.mode,
+Weight:d.weight,
+Power:d.power,
+Intensity:d.intensity,
+ERA:d.era,
+Status:d.status
+});
+
+});
+
+createExcel(data,serialVal);
+
+});
+
+}
+
+
+
+function createExcel(data,serial){
+
+const sheetData=[
+
+["Calibration Certificate"],
+["ใบรับรองการสอบเทียบเครื่องมือแพทย์"],
+
+[],
+
+["Device Serial Number",serial],
+["Calibration Date",new Date().toLocaleDateString()],
+
+[],
+
+["Reference Instrument","Environment"],
+["Manufacturer","OHMIC","Room Temp (°C)","24.2"],
+["Model","DT-100","Water Temp (°C)","25.0"],
+["Serial Number","12345","",""],
+
+[],
+
+["Test Device",""],
+["Manufacturer","SONOPULS"],
+["Model","492"],
+["Serial Number",serial],
+
+[],
+
+["Ultrasound Head 1","Ultrasound Head 2"],
+["Frequency (MHz)","1","Frequency (MHz)","3"],
+["ERA (cm²)","5","ERA (cm²)","5"],
+["Model","ABC","Model","ABC"],
+["Head Serial","11111","Head Serial","22222"],
+
+[],
+
+["Calibration Results"],
+
+["Timestamp","User","Mode","Weight (g)","Power (W)","Intensity","ERA","Status"]
+
+];
+
+data.forEach(d=>{
+
+sheetData.push([
+d.Timestamp,
+d.User,
+d.Mode,
+d.Weight,
+d.Power,
+d.Intensity,
+d.ERA,
+d.Status || "PASS"
+]);
+
+});
+
+const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+
+// ใส่กรอบทุก cell
+const range = XLSX.utils.decode_range(ws['!ref']);
+
+for(let R=range.s.r; R<=range.e.r; ++R){
+for(let C=range.s.c; C<=range.e.c; ++C){
+
+const cell = ws[XLSX.utils.encode_cell({r:R,c:C})];
+
+if(!cell) continue;
+
+cell.s={
+border:{
+top:{style:"thin"},
+bottom:{style:"thin"},
+left:{style:"thin"},
+right:{style:"thin"}
+}
+};
+
+}
+}
+
+
+const wb=XLSX.utils.book_new();
+
+XLSX.utils.book_append_sheet(wb,ws,"Calibration Certificate");
+
+XLSX.writeFile(wb,serial+"_Calibration_Certificate.xlsx");
+
+}
+
+
+function createExcel(data,serial){
+
+const sheetData = [
+
+["ผลการวัดกำลังกำลังคลื่น"],
+
+["วันที่สอบเทียบ", new Date().toLocaleDateString()],
+["ผู้ทำการวัด", data[0]?.User || ""],
+
+[],
+
+["เครื่องวัดกำลังกำลังคลื่นอัลตราซาวด์มาตรฐาน","สภาวะแวดล้อม"],
+["ผู้ผลิต","demoUPM","ก่อนการสอบเทียบ (°C)","24.2"],
+["รุ่น","DEMO","หลังการสอบเทียบ (°C)","24.3"],
+["หมายเลขเครื่อง","SF","",""],
+
+[],
+
+["หัวอัลตราซาวด์ หัวที่ 1"],
+["ความถี่ (MHz)","1"],
+["ERA (cm²)","5"],
+["รุ่น","ABC"],
+["หมายเลขเครื่อง", serial],
+
+[],
+
+["ผลการวัดจากฐานข้อมูล"],
+
+["Timestamp","User","Mode","Weight (g)","Power (W)","Intensity","ERA"]
+
+];
+
+
+// ใส่ข้อมูล calibration จาก Firebase
+data.forEach(d=>{
+
+sheetData.push([
+d.Timestamp,
+d.User,
+d.Mode,
+d.Weight_g,
+d.Power_W,
+d.Intensity_Wcm2,
+d.ERA_cm2
+]);
+
+});
+
+
+const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+const workbook = XLSX.utils.book_new();
+
+XLSX.utils.book_append_sheet(workbook,worksheet,"Calibration Report");
+
+XLSX.writeFile(workbook, serial+"_calibration_report.xlsx");
+
+}
+
+
+// โหลดตอนเปิดเว็บ
+window.onload=function(){
+
+loadSerials();
+
+}
+
+</script>
+
+</body>
+</html>
