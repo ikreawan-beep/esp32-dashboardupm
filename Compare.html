@@ -223,31 +223,29 @@ showCompare(a,b);
 // แสดงผล
 function showCompare(a,b){
 
-const params=["weight","power","intensity","era"];
+const params = ["weight","power","intensity","era","frequency","duty"];
 
 let html="";
 
 params.forEach(p=>{
 
-const v1=parseFloat(a[p]||0);
-const v2=parseFloat(b[p]||0);
+const v1 = parseFloat(a[p] || 0);
+const v2 = parseFloat(b[p] || 0);
 
-const diff=(v2-v1).toFixed(3);
+const diff = (v2 - v1).toFixed(3);
 
-html+=`
-
+html += `
 <tr>
 <td>${p}</td>
 <td>${v1}</td>
 <td>${v2}</td>
 <td class="diff">${diff}</td>
 </tr>
-
 `;
 
 });
 
-result.innerHTML=html;
+result.innerHTML = html;
 
 }
 
@@ -265,17 +263,19 @@ let data=[];
 
 snap.forEach(child=>{
 
-const d=child.val();
+const d = child.val();
 
 data.push({
-Timestamp:child.key,
-User:d.user,
-Mode:d.mode,
-Weight:d.weight,
-Power:d.power,
-Intensity:d.intensity,
-ERA:d.era,
-Status:d.status
+Timestamp: child.key,
+User: d.user,
+Mode: d.mode,
+Weight: d.weight,
+Power: d.power,
+Intensity: d.intensity,
+ERA: d.era,
+Frequency: d.frequency,
+Duty: d.duty || "-",
+Status: d.status || "PASS"
 });
 
 });
@@ -379,65 +379,73 @@ XLSX.writeFile(wb,serial+"_Calibration_Certificate.xlsx");
 
 }
 
-
 function createExcel(data,serial){
 
-const sheetData = [
+const sheetData=[
 
-["ผลการวัดกำลังกำลังคลื่น"],
-
-["วันที่สอบเทียบ", new Date().toLocaleDateString()],
-["ผู้ทำการวัด", data[0]?.User || ""],
+["Calibration Certificate"],
+["ใบรับรองการสอบเทียบเครื่องมือแพทย์"],
 
 [],
 
-["เครื่องวัดกำลังกำลังคลื่นอัลตราซาวด์มาตรฐาน","สภาวะแวดล้อม"],
-["ผู้ผลิต","demoUPM","ก่อนการสอบเทียบ (°C)","24.2"],
-["รุ่น","DEMO","หลังการสอบเทียบ (°C)","24.3"],
-["หมายเลขเครื่อง","SF","",""],
+["Device Serial Number",serial],
+["Calibration Date",new Date().toLocaleDateString()],
 
 [],
 
-["หัวอัลตราซาวด์ หัวที่ 1"],
-["ความถี่ (MHz)","1"],
-["ERA (cm²)","5"],
-["รุ่น","ABC"],
-["หมายเลขเครื่อง", serial],
+["Calibration Results"],
 
-[],
-
-["ผลการวัดจากฐานข้อมูล"],
-
-["Timestamp","User","Mode","Weight (g)","Power (W)","Intensity","ERA"]
+["Timestamp","User","Mode","Weight (g)","Power (W)","Intensity","ERA","Frequency","Duty","Status"]
 
 ];
 
-
-// ใส่ข้อมูล calibration จาก Firebase
 data.forEach(d=>{
 
 sheetData.push([
 d.Timestamp,
 d.User,
 d.Mode,
-d.Weight_g,
-d.Power_W,
-d.Intensity_Wcm2,
-d.ERA_cm2
+d.Weight,
+d.Power,
+d.Intensity,
+d.ERA,
+d.Frequency,
+d.Duty,
+d.Status
 ]);
 
 });
 
+const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
-const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+// ใส่เส้นกรอบ
+const range = XLSX.utils.decode_range(ws['!ref']);
 
-const workbook = XLSX.utils.book_new();
+for(let R=range.s.r; R<=range.e.r; ++R){
+for(let C=range.s.c; C<=range.e.c; ++C){
 
-XLSX.utils.book_append_sheet(workbook,worksheet,"Calibration Report");
+const cell = ws[XLSX.utils.encode_cell({r:R,c:C})];
+if(!cell) continue;
 
-XLSX.writeFile(workbook, serial+"_calibration_report.xlsx");
+cell.s={
+border:{
+top:{style:"thin"},
+bottom:{style:"thin"},
+left:{style:"thin"},
+right:{style:"thin"}
+}
+};
 
 }
+}
+
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,"Calibration");
+
+XLSX.writeFile(wb,serial+"_Calibration.xlsx");
+
+}
+
 
 
 // โหลดตอนเปิดเว็บ

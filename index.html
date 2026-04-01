@@ -493,7 +493,7 @@ body{
     <div class="card">
     <h4>Frequency</h4>
       <div class="value">
-        <input id="freqInput" class="freq-input" type="number" value="1.0" step="0.1">
+        <input id="freqInputC" class="freq-input" type="number" value="1.0">
         <span>MHz</span>
       </div>
     </div>
@@ -517,14 +517,22 @@ body{
         style="padding:12px 18px;border:none;border-radius:10px;background:#2e7d32;color:white;cursor:pointer;">
         Power
       </button>
-  </div>
 
+      <button onclick="toggleTemp()">Temp ON/OFF</button>
+  </div>
+    
 </div>
   <div class="card" style="margin-top:20px;">
     <h4>Intensity (W/cm²)</h4>
     <div class="value" id="intensityC">--</div>
   </div>
-
+<div class="card" style="margin-top:20px;">
+  <h4>Temperature</h4>
+  <div class="value">
+    <span id="tempValue">--</span>
+    <span class="unit">°C</span>
+  </div>
+</div>
   <div id="calStatus" style="margin-top:10px;font-weight:600;"></div>
 
 </div>
@@ -554,7 +562,7 @@ body{
     <div class="card">
     <h4>Frequency</h4>
       <div class="value">
-        <input id="freqInput" class="freq-input" type="number" value="1.0" step="0.1">
+        <input id="freqInputP" class="freq-input" type="number" value="1.0">
         <span>MHz</span>
       </div>
 
@@ -758,11 +766,17 @@ if(auth.currentUser.displayName){
   });
 
   db.ref("loadcell/power").on("value",snap=>{
+
     const p = snap.val() || 0;
     powerC.innerText = p.toFixed(1);
     powerP.innerText = p.toFixed(1);
     updateIntensity();
   });
+  db.ref("loadcell/temp").on("value", snap=>{
+  const t = snap.val() || 0;
+  tempValue.innerText = t.toFixed(1);
+});
+
   function loadHistory(serial){
 
   historyList.innerHTML = "Loading...";
@@ -819,15 +833,19 @@ function saveCalibration(){
     return;
   }
 
+  const mode = modeSelect.value;
+
   const weightVal = parseFloat(weightC.innerText) || 0;
   const powerVal = parseFloat(powerC.innerText) || 0;
   const eraVal = parseFloat(eraInput.value) || 1;
-  const freqVal = parseFloat(freqInput.value) || 1;
-  const dutyVal = parseFloat(dutyInput.value) || 1;
-  const mode = modeSelect.value;
+
+  const freqVal = parseFloat(
+    mode === "continuous" ? freqInputC.value : freqInputP.value
+  ) || 1;
+
+  const dutyVal = parseFloat(dutyInput.value) || 0;
 
   const intensity = powerVal / eraVal;
-
 
   const now = new Date();
   const timestamp =
@@ -838,7 +856,6 @@ function saveCalibration(){
     String(now.getMinutes()).padStart(2,'0') + "-" +
     String(now.getSeconds()).padStart(2,'0');
 
-  // Base data
   const logData = {
     user: auth.currentUser.email,
     mode: mode,
@@ -846,20 +863,16 @@ function saveCalibration(){
     power: powerVal,
     era: eraVal,
     Frequency: freqVal,
-    Duty: dutyVal,
     intensity: parseFloat(intensity.toFixed(3)),
   };
 
-  // เพิ่มค่าเฉพาะ Pulse Mode
   if(mode === "pulse"){
-    logData.duty = parseFloat(dutyInput.innerText) || 0;
+    logData.duty = dutyVal;
   }
 
   db.ref("calibration_logs/"+serial+"/"+timestamp).set(logData);
 
-  calStatus.innerText = "Calibration Saved → " + status;
-  calStatus.style.color = status === "PASS" ? "green" : "red";
-
+  calStatus.innerText = "Calibration Saved";
 }
 function changeMode(){
 
@@ -1007,6 +1020,13 @@ function toggleDarkMode(){
     localStorage.setItem("theme","light");
   }
 
+}
+
+function toggleTemp(){
+  db.ref("control/temp_enable").once("value").then(snap=>{
+    const val = snap.val() || 0;
+    db.ref("control/temp_enable").set(val === 1 ? 0 : 1);
+  });
 }
 </script>
 
