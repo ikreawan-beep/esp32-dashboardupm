@@ -518,23 +518,14 @@ body{
         Power
       </button>
 
-      <button onclick="toggleTemp()">Temp ON/OFF</button>
+      
   </div>
     
-</div>
+  </div>
   <div class="card" style="margin-top:20px;">
     <h4>Intensity (W/cm²)</h4>
     <div class="value" id="intensityC">--</div>
   </div>
-<div class="card" style="margin-top:20px;">
-  <h4>Temperature</h4>
-  <div class="value">
-    <span id="tempValue">--</span>
-    <span class="unit">°C</span>
-  </div>
-</div>
-  <div id="calStatus" style="margin-top:10px;font-weight:600;"></div>
-
 </div>
 
 
@@ -581,6 +572,7 @@ body{
       <h4>Intensity (W/cm²)</h4>
       <div class="value" id="intensityP">--</div>
     </div>
+
     <div class="card">
     <h4>Device Control</h4>
       <button onclick="saveCalibration()"
@@ -608,7 +600,6 @@ body{
 
   <!-- CHART + HISTORY -->
   <div class="double-grid" style="margin-top:25px;">
-
   <!-- CHART -->
   <div class="card">
     <h4>Real-Time Weight Trend</h4>
@@ -768,8 +759,8 @@ if(auth.currentUser.displayName){
   db.ref("loadcell/power").on("value",snap=>{
 
     const p = snap.val() || 0;
-    powerC.innerText = p.toFixed(1);
-    powerP.innerText = p.toFixed(1);
+    powerC.innerText = p.toFixed(2);
+    powerP.innerText = p.toFixed(2);
     updateIntensity();
   });
   db.ref("loadcell/temp").on("value", snap=>{
